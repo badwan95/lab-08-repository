@@ -35,3 +35,13 @@ Start time: 2:30 pm
 Finish time: 11:00 pm
 
 Actual time needed to complete: Over 7 hours.
+
+## Number and name of feature:#2: Deploy to heroku
+
+Estimate of time needed to complete: 20 minutes
+
+Start time: 1:50 am
+
+Finish time: 2:00 am
+
+Actual time needed to complete: 10 minutes.
