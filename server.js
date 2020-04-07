@@ -18,6 +18,12 @@ client.on('error', (err) => {
   throw new Error(err);
 });
 
+// let jaja = 'INSERT INTO locations(search_query,formatted_query,latitude,longitude) VALUES ("xbxbxf","fdg",8,5)';
+// client.query(jaja).then((results) => {
+//   response.status(200).json(results);
+// })
+// .catch((err) =>errorHandler(err,request,response));
+
 //Routes
 app.get('/location',locationHandler);
 app.get('/weather',weatherHandler);
@@ -38,15 +44,15 @@ function locationHandler(request,response){
       const locationData = new Location(city,geoData);
       latitude = locationData.latitude;
       longitude = locationData.longitude;
-      const SQL = 'INSERT INTO locations(search_query,formatted_query,latitude,longitude) VALUES ($1,$2,$3,$4) RETURNING *';
-      const safeValues = [locationData.search_query, locationData.formatted_query,locationData.latitude,locationData.longitude];
-      console.log(safeValues);
-      client.query(SQL, safeValues).then((results) => {
-        res.status(200).json(results.rows);
+      const SQL = 'INSERT INTO locations(search_query,formatted_query,latitude,longitude) VALUES ($1,$2,$3,$4)';
+      const safeValues = [locationData.search_query, locationData.formatted_query,parseFloat(locationData.latitude),parseFloat(locationData.longitude)];
+      client.query(SQL,safeValues)
+      .then( results => {
+        response.status(200).json(results.rows);
       })
-      .catch((err) => {
-        res.status(500).send(err);
-      });
+      .catch (() => app.use((error, req, res) => {
+        res.status(500).send(error);
+      }));
       coordArray.push(latitude,longitude);
       response.status(200).json(locationData);
   }).catch((err)=> errorHandler(err,request,response));
@@ -56,10 +62,11 @@ function locationHandler(request,response){
 
 function weatherHandler(request,response){
     superagent(`https://api.weatherbit.io/v2.0/forecast/daily?city=${request.query.search_query}&key=${process.env.WEATHER_API_KEY}`).then(weatherRes=>{
-        const weatherSummaries = weatherRes.body.data.map(day=>{
-            return new Weather(day);
-        })
-        response.status(200).json(weatherSummaries);
+      const weatherSummaries = weatherRes.body.data.map(day=>{
+          return new Weather(day);
+      })
+      console.log(weatherSummaries);
+      response.status(200).json(weatherSummaries);
     }).catch(err=>errorHandler(err,request,response));
 }
 
@@ -105,7 +112,6 @@ function Trail(data){
     this.condition_time = data.conditionDate.split(' ')[1];
 }
 
-
 client
   .connect()
   .then(() => {
@@ -113,8 +119,61 @@ client
       console.log(`my server is up and running on port ${PORT}`)
     );
   })
+  .then(()=> client.query('select * from locations'))
+  .then((result)=> console.log(result.row) )
   .catch((err) => {
     throw new Error(`startup error ${err}`);
   });
-
 // app.listen(PORT, () => console.log(`the server is up and running on ${PORT}`));
+
+
+// 'use strict';
+// require('dotenv').config();
+// const express = require('express');
+// const pg = require('pg');
+// const PORT = process.env.PORT || 4000;
+// const app = express();
+// // make a connection to the psql using the provided link
+// const client = new pg.Client(process.env.DATABASE_URL);
+
+// client.on('error', (err) => {
+//   throw new Error(err);
+// });
+// // get data from the query and Insert it to the DB
+// app.get('/add', (req, res) => {
+//   let name = req.query.name;
+//   let role = req.query.role;
+//   const SQL = 'INSERT INTO people(name,role) VALUES ($1,$2) RETURNING *';
+//   const safeValues = [req.query.name, req.query.role];
+//   client
+//     .query(SQL, safeValues)
+//     .then((results) => {
+//       res.status(200).json(results.rows);
+//     })
+//     .catch((err) => {
+//       res.status(500).send(err);
+//     });
+// });
+// app.get('/people', (req, res) => {
+//   const SQL = 'INSERT INTO locations(search_query,formatted_query,latitude,longitude) VALUES ($1,$2,$3,$4)';
+//   //       const SQL = 'INSERT INTO locations(search_query,formatted_query,latitude,longitude) VALUES ("xbxbxf","fdg",8,5)';
+//   const safeValues = ['dsad', 'fdgdg',5,6];
+//   client
+//     .query(SQL,safeValues)
+//     .then((results) => {
+//       res.status(200).json(results.rows);
+//     })
+//     .catch((err) => {
+//       res.status(500).send(err);
+//     });
+// });
+// client
+//   .connect()
+//   .then(() => {
+//     app.listen(PORT, () =>
+//       console.log(`my server is up and running on port ${PORT}`)
+//     );
+//   })
+//   .catch((err) => {
+//     throw new Error(`startup error ${err}`);
+//   });
