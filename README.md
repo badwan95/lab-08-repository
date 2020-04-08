@@ -45,3 +45,14 @@ Start time: 1:50 am
 Finish time: 2:00 am
 
 Actual time needed to complete: 10 minutes.
+
+
+## Number and name of feature:#3: Get already existing data from server
+
+Estimate of time needed to complete: 1 hour
+
+Start time: 12 am
+
+Finish time: 1:00 am
+
+Actual time needed to complete: 1 hour
