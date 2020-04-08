@@ -39,9 +39,11 @@ function locationHandler(request,response){
   .query(SQL,values)
   .then(result=>{
     if (result.rows.length > 0){
-      console.log('from the db',result.rows[0]);
       let theResult = result.rows[0];
-      console.log('the result is',theResult);
+      console.log('latitde is: ',theResult.latitude)
+      let lat=theResult.latitude;
+      let lon=theResult.longitude;
+      coordArray.push(lat,lon);
       response.status(200).json(theResult);
     }else{
       superagent(`https://eu1.locationiq.com/v1/search.php?key=${process.env.GEOCODE_API_KEY}&q=${city}&format=json`).then((resp)=>{
