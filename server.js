@@ -18,12 +18,6 @@ client.on('error', (err) => {
   throw new Error(err);
 });
 
-// let jaja = 'INSERT INTO locations(search_query,formatted_query,latitude,longitude) VALUES ("xbxbxf","fdg",8,5)';
-// client.query(jaja).then((results) => {
-//   response.status(200).json(results);
-// })
-// .catch((err) =>errorHandler(err,request,response));
-
 //Routes
 app.get('/location',locationHandler);
 app.get('/weather',weatherHandler);
@@ -39,23 +33,37 @@ let coordArray=[];
 
 function locationHandler(request,response){
   let city = request.query.city;
-  superagent(`https://eu1.locationiq.com/v1/search.php?key=${process.env.GEOCODE_API_KEY}&q=${city}&format=json`).then((resp)=>{
-      const geoData = resp.body;
-      const locationData = new Location(city,geoData);
-      latitude = locationData.latitude;
-      longitude = locationData.longitude;
-      const SQL = 'INSERT INTO locations(search_query,formatted_query,latitude,longitude) VALUES ($1,$2,$3,$4)';
-      const safeValues = [locationData.search_query, locationData.formatted_query,parseFloat(locationData.latitude),parseFloat(locationData.longitude)];
-      client.query(SQL,safeValues)
-      .then( results => {
-        response.status(200).json(results.rows);
-      })
-      .catch (() => app.use((error, req, res) => {
-        res.status(500).send(error);
-      }));
-      coordArray.push(latitude,longitude);
-      response.status(200).json(locationData);
-  }).catch((err)=> errorHandler(err,request,response));
+  let SQL ='SELECT * FROM locations WHERE search_query = $1';
+  const values = [city];
+  client
+  .query(SQL,values)
+  .then(result=>{
+    if (result.rows.length > 0){
+      console.log('from the db',result.rows[0]);
+      let theResult = result.rows[0];
+      console.log('the result is',theResult);
+      response.status(200).json(theResult);
+    }else{
+      superagent(`https://eu1.locationiq.com/v1/search.php?key=${process.env.GEOCODE_API_KEY}&q=${city}&format=json`).then((resp)=>{
+        const geoData = resp.body;
+        const locationData = new Location(city,geoData);
+        latitude = locationData.latitude;
+        longitude = locationData.longitude;
+        const SQL = 'INSERT INTO locations(search_query,formatted_query,latitude,longitude) VALUES ($1,$2,$3,$4)';
+        const safeValues = [locationData.search_query, locationData.formatted_query,parseFloat(locationData.latitude),parseFloat(locationData.longitude)];
+        client.query(SQL,safeValues)
+        .then( results => {
+          response.status(200).json(results.rows);
+        })
+        .catch (() => app.use((error, req, res) => {
+          res.status(500).send(error);
+        }));
+        coordArray.push(latitude,longitude);
+        console.log('insert into database',locationData);
+        response.status(200).json(locationData);
+    }).catch((err)=> errorHandler(err,request,response));
+    }
+  })
 }
 
 
@@ -124,56 +132,3 @@ client
   .catch((err) => {
     throw new Error(`startup error ${err}`);
   });
-// app.listen(PORT, () => console.log(`the server is up and running on ${PORT}`));
-
-
-// 'use strict';
-// require('dotenv').config();
-// const express = require('express');
-// const pg = require('pg');
-// const PORT = process.env.PORT || 4000;
-// const app = express();
-// // make a connection to the psql using the provided link
-// const client = new pg.Client(process.env.DATABASE_URL);
-
-// client.on('error', (err) => {
-//   throw new Error(err);
-// });
-// // get data from the query and Insert it to the DB
-// app.get('/add', (req, res) => {
-//   let name = req.query.name;
-//   let role = req.query.role;
-//   const SQL = 'INSERT INTO people(name,role) VALUES ($1,$2) RETURNING *';
-//   const safeValues = [req.query.name, req.query.role];
-//   client
-//     .query(SQL, safeValues)
-//     .then((results) => {
-//       res.status(200).json(results.rows);
-//     })
-//     .catch((err) => {
-//       res.status(500).send(err);
-//     });
-// });
-// app.get('/people', (req, res) => {
-//   const SQL = 'INSERT INTO locations(search_query,formatted_query,latitude,longitude) VALUES ($1,$2,$3,$4)';
-//   //       const SQL = 'INSERT INTO locations(search_query,formatted_query,latitude,longitude) VALUES ("xbxbxf","fdg",8,5)';
-//   const safeValues = ['dsad', 'fdgdg',5,6];
-//   client
-//     .query(SQL,safeValues)
-//     .then((results) => {
-//       res.status(200).json(results.rows);
-//     })
-//     .catch((err) => {
-//       res.status(500).send(err);
-//     });
-// });
-// client
-//   .connect()
-//   .then(() => {
-//     app.listen(PORT, () =>
-//       console.log(`my server is up and running on port ${PORT}`)
-//     );
-//   })
-//   .catch((err) => {
-//     throw new Error(`startup error ${err}`);
-//   });
